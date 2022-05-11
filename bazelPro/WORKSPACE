@@ -22,3 +22,10 @@ load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_
 rules_proto_dependencies()
 rules_proto_toolchains()
 
+
+#libevent
+load("//third_party/bazel-rules-libevent:repos.bzl", libevent_repos="repos")
+libevent_repos()
+
+load("@com_github_3rdparty_bazel_rules_libevent//bazel:deps.bzl", libevent_deps="deps")
+libevent_deps()

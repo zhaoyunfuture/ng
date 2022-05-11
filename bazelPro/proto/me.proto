@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+message meMsg
+{
+    repeated detailMsg          info = 1;
+}
+
+message detailMsg
+{
+    required int32              id = 1;   
+    optional int32              x = 2;       
+    optional int32              y = 3;       
+}

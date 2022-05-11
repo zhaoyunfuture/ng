@@ -38,19 +38,20 @@ cc_library(
 )
 #lib end
 
-#cc_test(
-#  name = "test",
-#  size = "small",
-#  srcs = ["src/hello_test.cc"],
-#  deps = ["@com_google_googletest//:gtest_main"],
-#)
+cc_test(
+  name = "test",
+  size = "small",
+  srcs = ["src/test.cc"],
+  deps = ["@com_google_googletest//:gtest_main"],
+)
 
 cc_binary(
   name = "exe",
-  srcs = glob(["src/*.cc"]),
+  srcs = glob(["src/main.cc"]),
   deps = [
     #"@com_google_googletest//:gtest_main",
-    #":cc_proto_lib",
+    ":cc_proto_lib",
     #":libName",
+    #"@com_github_libevent_libevent//:event",
     ],
 )
