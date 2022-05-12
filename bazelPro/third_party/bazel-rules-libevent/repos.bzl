@@ -8,21 +8,22 @@
 # different version of bazel-rules-libevent follow the Bazel build
 # instructions at https://github.com/3rdparty/bazel-rules-libevent.
 ########################################################################
-    #if "rules_foreign_cc" not in native.existing_rules():
-    #    http_archive(
-    #        name = "rules_foreign_cc",
-    #        url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.2.0.tar.gz",
-    #        sha256 = "d54742ffbdc6924f222d2179f0e10e911c5c659c4ae74158e9fe827aad862ac6",
-    #        strip_prefix = "rules_foreign_cc-0.2.0",
-    #        repo_mapping = repo_mapping,
-    #    )
 
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def repos(external = True, repo_mapping = {}):
-    if external and "com_github_3rdparty_bazel_rules_libevent" not in native.existing_rules():
+   if "rules_foreign_cc" not in native.existing_rules():
+        http_archive(
+            name = "rules_foreign_cc",
+            url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.2.0.tar.gz",
+            sha256 = "d54742ffbdc6924f222d2179f0e10e911c5c659c4ae74158e9fe827aad862ac6",
+            strip_prefix = "rules_foreign_cc-0.2.0",
+            repo_mapping = repo_mapping,
+        )
+
+   if external and "com_github_3rdparty_bazel_rules_libevent" not in native.existing_rules():
         git_repository(
             name = "com_github_3rdparty_bazel_rules_libevent",
             commit = "8a8ac3906ad9956cb715ae0c26bd3adcb2817697",

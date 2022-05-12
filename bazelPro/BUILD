@@ -38,6 +38,12 @@ cc_library(
 )
 #lib end
 
+cc_library(
+    name = "libevent",
+    deps = ["@com_github_libevent_libevent//:event"],
+    visibility = ["//visibility:public"],
+)
+
 cc_test(
   name = "test",
   size = "small",
@@ -52,6 +58,6 @@ cc_binary(
     #"@com_google_googletest//:gtest_main",
     ":cc_proto_lib",
     #":libName",
-    #"@com_github_libevent_libevent//:event",
+    ":libevent",
     ],
 )
