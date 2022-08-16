@@ -1,13 +1,78 @@
 syntax = "proto2";
 
-message meMsg
-{
-    repeated detailMsg          info = 1;
+
+//common part
+message header {
+    required string             m_name = 1;
+    required string             m_version = 2;
+}
+message pathPoint {
+    required int32              m_posx = 1;
+    required int32              m_posy = 2;
+}
+message moveInfo {
+    required pathPoint          m_pp = 1;
+    optional int32              m_velocity = 3;
+}
+//gs to jw part
+message miscellanyInfo {
+    required int32              m_battery = 1;
+    required int32              m_signal = 2;
+}
+message taskInfo {
+    required int32              m_status = 1;
+    required int32              m_progress = 2;
+}
+message planInfo {
+    repeated pathPoint          m_pp = 1;
+}
+message warningInfo {
+    required int32              m_code = 1;
+    required int32              m_level = 2;
+}
+message gsRobotInfo {
+    required string             m_agv_id = 1;
+    required moveInfo           m_move_info = 2;
+    optional taskInfo           m_task_info = 3;
+    optional planInfo           m_plan_info = 4;
+    required miscellanyInfo     m_misc_info = 5;
+    optional warningInfo        m_warning_info = 6;
+}
+message applyPathReq {
+    required string             m_agv_id = 1;
+    required string             m_path_id = 2;
+    required pathPoint          m_pp = 3;//remove
+    required int32              m_type = 4;
+    optional int32              m_req_id = 5;
+}
+message gs2jwMsg {
+    optional header             m_header = 1;
+    oneof payload {
+        applyPathReq            m_apply_path_req = 2;
+        gsRobotInfo             m_gs_robot_info = 3;
+    } 
 }
 
-message detailMsg
-{
-    required int32              id = 1;   
-    optional int32              x = 2;       
-    optional int32              y = 3;       
+//jw to gs part
+message jw2gsMsg {
+    optional header             m_header = 1;
+    oneof payload {
+        applyPathResp           m_apply_path_resp = 2;
+        jwRobotPlan             m_jw_robot_plan = 3;
+    } 
+}
+message applyPathResp {
+    required string             m_agv_id = 1;
+    required string             m_path_id = 2;
+    required int32              m_result = 3;
+    optional int32              m_resp_id = 4;
+}
+message jwRobotPlan {
+    repeated jwRobotInfo        m_jw_robot_info = 1;
+}
+message jwRobotInfo {
+    required string             m_agv_id = 1;
+    //repeated string             m_gs_id = 2;
+    required moveInfo           m_move_info = 3;
+    required planInfo           m_plan_info = 4;
 }

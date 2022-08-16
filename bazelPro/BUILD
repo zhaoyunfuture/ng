@@ -38,26 +38,85 @@ cc_library(
 )
 #lib end
 
+#lib utils begin
 cc_library(
-    name = "libevent",
-    deps = ["@com_github_libevent_libevent//:event"],
+    name = "utils",
+    srcs = glob([
+            "src/utils/*.cc"
+    ]),
+    hdrs = glob([
+            "src/utils/*.h",
+    ]),
     visibility = ["//visibility:public"],
 )
+#lib end
+
+#lib jw begin
+cc_library(
+    name = "jw",
+    srcs = glob([
+            "src/jw/*.cc"
+    ]),
+    hdrs = glob([
+            "src/jw/*.h",
+    ]),
+    visibility = ["//visibility:public"],
+)
+#lib end
+
+#lib tmp begin
+cc_library(
+    name = "tmp",
+    srcs = glob([
+            "src/tmp/*.cc"
+    ]),
+    hdrs = glob([
+            "src/tmp/*.h",
+    ]),
+    visibility = ["//visibility:public"],
+)
+#lib end
 
 cc_test(
   name = "test",
   size = "small",
-  srcs = ["src/test.cc"],
-  deps = ["@com_google_googletest//:gtest_main"],
+  srcs = ["src/test/test.cc"],
+  deps = [
+    ":tmp",
+    "@com_google_googletest//:gtest_main",
+    
+    ],
 )
 
 cc_binary(
   name = "exe",
   srcs = glob(["src/main.cc"]),
+  linkopts = [ "-lpthread" ] ,
   deps = [
-    #"@com_google_googletest//:gtest_main",
     ":cc_proto_lib",
     #":libName",
-    ":libevent",
+    #"@com_github_libevent_libevent//:event",
+    "@com_github_tencent_rapidjson//:rapidjson",
+    ":utils",
+    ":jw",
+    ":tmp",
+    ],
+)
+
+cc_binary(
+  name = "udp_srv",
+  srcs = glob(["src/udp/srv.cc"]),
+  linkopts = [ "-lpthread" ] ,
+  deps = [
+    "@com_github_tencent_rapidjson//:rapidjson",
+    ],
+)
+
+cc_binary(
+  name = "udp_cli",
+  srcs = glob(["src/udp/client.cc"]),
+  linkopts = [ "-lpthread" ] ,
+  deps = [
+    "@com_github_tencent_rapidjson//:rapidjson",
     ],
 )
