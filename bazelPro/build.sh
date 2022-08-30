@@ -21,4 +21,10 @@ function cli() {
     cp bazel-bin/udp_cli .
 }
 
+function jw_srv() {
+    bazel build //:jw_srv
+    rm -rf jw_srv
+    cp bazel-bin/jw_srv .
+}
+
 $@

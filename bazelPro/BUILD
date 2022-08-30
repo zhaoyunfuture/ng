@@ -93,13 +93,12 @@ cc_binary(
   srcs = glob(["src/main.cc"]),
   linkopts = [ "-lpthread" ] ,
   deps = [
-    ":cc_proto_lib",
+    #":cc_proto_lib",
     #":libName",
     #"@com_github_libevent_libevent//:event",
-    "@com_github_tencent_rapidjson//:rapidjson",
+    #"@com_github_tencent_rapidjson//:rapidjson",
     ":utils",
-    ":jw",
-    ":tmp",
+    #":tmp",
     ],
 )
 
@@ -115,6 +114,15 @@ cc_binary(
 cc_binary(
   name = "udp_cli",
   srcs = glob(["src/udp/client.cc"]),
+  linkopts = [ "-lpthread" ] ,
+  deps = [
+    "@com_github_tencent_rapidjson//:rapidjson",
+    ],
+)
+
+cc_binary(
+  name = "jw_srv",
+  srcs = glob(["src/jw/srv.cc"]),
   linkopts = [ "-lpthread" ] ,
   deps = [
     "@com_github_tencent_rapidjson//:rapidjson",
