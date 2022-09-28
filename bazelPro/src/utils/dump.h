@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+namespace UTILS {
+
 // useage: 
 #if 0
     int len = sizeof(HEADER_S);
@@ -19,3 +21,4 @@
 
 int hexdump(void *addr, size_t len);
 
+}

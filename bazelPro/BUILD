@@ -73,6 +73,9 @@ cc_library(
     hdrs = glob([
             "src/tmp/*.h",
     ]),
+    deps = [
+        "@com_github_tencent_rapidjson//:rapidjson",
+    ],
     visibility = ["//visibility:public"],
 )
 #lib end
@@ -96,9 +99,9 @@ cc_binary(
     #":cc_proto_lib",
     #":libName",
     #"@com_github_libevent_libevent//:event",
-    #"@com_github_tencent_rapidjson//:rapidjson",
+    
     ":utils",
-    #":tmp",
+    ":tmp",
     ],
 )
 
@@ -126,5 +129,28 @@ cc_binary(
   linkopts = [ "-lpthread" ] ,
   deps = [
     "@com_github_tencent_rapidjson//:rapidjson",
+    ],
+)
+
+#hk part
+#lib tmp begin
+cc_library(
+    name = "hk_lib",
+    srcs = glob([
+            "src/hk/msg_gen.cpp"
+    ]),
+    hdrs = glob([
+            "src/hk/*.h",
+    ]),
+    visibility = ["//visibility:public"],
+)
+#lib end
+cc_binary(
+  name = "hk_srv",
+  srcs = glob(["src/hk/main.cpp"]),
+  linkopts = [ "-lpthread" ] ,
+  deps = [
+    ":hk_lib",
+    ":utils",
     ],
 )

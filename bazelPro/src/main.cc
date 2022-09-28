@@ -11,16 +11,21 @@
 #include <thread>
 
 #include "utils/sys.h"
-
+#include "tmp/tmp.h"
 
 int main(int argc, char* argv[])
 {
     std::cout << "hello Jacob.." << std::endl;
     
-    std::cout << UTILS::get_pid_with_name("udp_srv") << std::endl;
+    std::cout << "3 => 1" << std::endl;
+    test_cross_map("3","1");
+    std::cout << "1 => 3" << std::endl;
+    test_cross_map("1","3");
+    std::cout << "2 => 3" << std::endl;
+    test_cross_map("2","3");
 
-    UTILS::terminate_with_pid(UTILS::get_pid_with_name("udp_srv"));
-    
+    std::cout << "1 => 4" << std::endl;
+    test_cross_map("1","4");
 
     return 0;
 }

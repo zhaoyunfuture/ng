@@ -18,6 +18,10 @@ static int server_sockfd = -1;
 static char buffer[1024];
 static struct sockaddr_in client_addr;
 static int client_len = 0;
+static int global_path_tick = 0;
+static int block_tick = 0;
+
+#define PRETTY_DEBUG 0
 
 void handle_msg(char* buf, int len) {
 	char b[1024];
@@ -32,8 +36,8 @@ void handle_msg(char* buf, int len) {
 	}
 	rapidjson::StringBuffer sb;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
-	d.Accept(writer);    // Accept() traverses the DOM and generates Handler events.
-	printf("dump:%s\n",sb.GetString());
+	d.Accept(writer);
+	printf("\n%s\n",sb.GetString());
 
 	rapidjson::Value::ConstMemberIterator itr = d.FindMember("type");
 
@@ -43,32 +47,44 @@ void handle_msg(char* buf, int len) {
 	}
 
 	std::string type = itr->value.GetString();
-	printf("[type]: %s\n", type.c_str());
+	//printf("[type]: %s\n", type.c_str());
 
 	if(type == "pathReq") {
-		rapidjson::StringBuffer resp;
-		rapidjson::Writer<rapidjson::StringBuffer> writer_resp(resp);
+		rapidjson::Document jsonDoc; 
+		jsonDoc.SetObject();
+		jsonDoc.AddMember("type", "pathResp", jsonDoc.GetAllocator());
+		jsonDoc.AddMember("id", d["id"].GetInt(), jsonDoc.GetAllocator());
 
-		//begin
-		writer_resp.StartObject();
+		if(block_tick%4 == 0) {
+			jsonDoc.AddMember("result", true, jsonDoc.GetAllocator());
+		} else {
+			jsonDoc.AddMember("result", false, jsonDoc.GetAllocator());
+		}
 
-		//type : info
-		writer_resp.Key("type");
-		writer_resp.String("pathResp");
-		//id : int
-		writer_resp.Key("id");
-		writer_resp.Int(d["id"].GetInt());
-		//result : bool
-		writer_resp.Key("result");
-		writer_resp.Bool(true);
+		block_tick++;
+		if(block_tick%2 == 0) {
+			rapidjson::Value block(rapidjson::Type::kArrayType);
 
-		//end
-		writer_resp.EndObject();
+			for (int i = 0; i < 5; ++i) {
+				rapidjson::Value object(rapidjson::Type::kObjectType);
+				object.AddMember("x", 700+i, jsonDoc.GetAllocator());
+				object.AddMember("y", 800+i, jsonDoc.GetAllocator());
 
-		printf("len:%d, resp: %s\n", resp.GetLength(), resp.GetString());
-		strncpy(buffer, resp.GetString(), resp.GetLength());	
+				block.PushBack(object, jsonDoc.GetAllocator());
+			}
 
-		sendto(server_sockfd, buffer, resp.GetLength(), 0, (struct sockaddr *)&client_addr, client_len);
+			jsonDoc.AddMember("block", block, jsonDoc.GetAllocator());
+
+		}
+
+		rapidjson::StringBuffer pathResp;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(pathResp);
+		jsonDoc.Accept(writer);
+
+	    //printf("len:%d, resp: %s\n", pathResp.GetLength(), pathResp.GetString());
+		strncpy(buffer, pathResp.GetString(), pathResp.GetLength());	
+
+		sendto(server_sockfd, buffer, pathResp.GetLength(), 0, (struct sockaddr *)&client_addr, client_len);
 	} else if(type == "info") {
 		rapidjson::Document jsonDoc; 
 		jsonDoc.SetObject();
@@ -106,15 +122,53 @@ void handle_msg(char* buf, int len) {
 		rapidjson::Writer<rapidjson::StringBuffer> writer(hot);
 		jsonDoc.Accept(writer);
 		// get json format string
-		//std::string jsonString = hot.GetString();
+		#if PRETTY_DEBUG
 		rapidjson::PrettyWriter<rapidjson::StringBuffer> pw(sb);
 		jsonDoc.Accept(pw);    // Accept() traverses the DOM and generates Handler events.
 		printf("\nsend dump:%s\n",sb.GetString());
+		#endif
 
 		char b[1024];
 		strncpy(b, hot.GetString(), hot.GetLength());
 
 		sendto(server_sockfd, b, hot.GetLength(), 0, (struct sockaddr *)&client_addr, client_len);
+	}
+
+	global_path_tick++;
+	if(global_path_tick % 3 == 0) {
+		rapidjson::Document jsonDoc; 
+		jsonDoc.SetObject();
+		jsonDoc.AddMember("type", "globalpath", jsonDoc.GetAllocator());
+		jsonDoc.AddMember("serverpathid", global_path_tick, jsonDoc.GetAllocator());
+
+		rapidjson::Value point(rapidjson::Type::kArrayType);
+
+		for (int i = 0; i < 5; ++i) {
+			rapidjson::Value object(rapidjson::Type::kObjectType);
+			object.AddMember("x", 700+i, jsonDoc.GetAllocator());
+			object.AddMember("y", 800+i, jsonDoc.GetAllocator());
+
+			point.PushBack(object, jsonDoc.GetAllocator());
+		}
+
+		jsonDoc.AddMember("point", point, jsonDoc.GetAllocator());
+
+		// to Serialize to JSON String
+		rapidjson::StringBuffer glob;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(glob);
+		jsonDoc.Accept(writer);
+		// get json format string
+		#if PRETTY_DEBUG
+		rapidjson::StringBuffer sb;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> pw(sb);
+		jsonDoc.Accept(pw);    // Accept() traverses the DOM and generates Handler events.
+		printf("\nglobalpath dump:%s\n",sb.GetString());
+		#endif
+
+		char b[1024];
+		strncpy(b, glob.GetString(), glob.GetLength());
+
+		sendto(server_sockfd, b, glob.GetLength(), 0, (struct sockaddr *)&client_addr, client_len);
 	}
 }
 

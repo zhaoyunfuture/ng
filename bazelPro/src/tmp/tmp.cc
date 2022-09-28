@@ -2,6 +2,16 @@
 #include <string>
 #include <unistd.h>
 #include <chrono>
+#include <utility> //pair
+#include <vector>
+
+//for test_cross_map
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/error/en.h"
+#include "rapidjson/filereadstream.h"
 
 static bool active_saving_ = false;
 static bool has_obstacle_ = true;
@@ -71,4 +81,114 @@ ___|   |___|   |___
   }
 
   return 0;
+}
+std::pair<bool,std::string> load_point(const std::string& id, const std::string& neighbor) {
+  std::string file = "./map_cross/" + id + "/cross.json";
+  printf("file: %s\n", file.c_str());
+  FILE* fp = fopen(file.c_str(), "r");
+  if(fp == nullptr) {
+    printf("cross.json open fail\n");
+    return std::make_pair<bool,std::string>(false,"");
+  }
+ 
+  char readBuffer[1024];
+  rapidjson::Document d;
+
+  rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
+  if(d.ParseStream(is).HasParseError()) {
+    printf("cross parse fail,err:[%d]%s\n", d.GetParseError(), rapidjson::GetParseError_En(d.GetParseError()));
+    return std::make_pair<bool,std::string>(false,"");
+  }
+
+  if(d.IsArray()) {
+    printf("rule size: %d\n", d.Size());
+    
+    for(rapidjson::SizeType i = 0; i < d.Size(); i++) {
+      std::string n = d[i]["neighbor"].GetString();
+      
+      if(n == neighbor) {
+        return std::make_pair<bool,std::string>(true, d[i]["point"]["info"].GetString());
+      }
+    }
+  }
+
+  return std::make_pair<bool,std::string>(false,"");
+}
+bool test_cross_map(const std::string& from, const std::string& to) {
+  printf("test_cross_map\n");
+
+  FILE* fp = fopen("./map_cross/cross_rule.json", "r");
+  if(fp == nullptr) {
+    printf("cross_rule.json open fail\n");
+    return false;
+  }
+ 
+  char readBuffer[1024];
+  rapidjson::Document d;
+
+  rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
+  if(d.ParseStream(is).HasParseError()) {
+    printf("cross_rule parse fail,err:[%d]%s\n", d.GetParseError(), rapidjson::GetParseError_En(d.GetParseError()));
+    return false;
+  }
+
+  std::vector<std::string> result;
+
+  if(d.IsArray()) {
+    printf("cross_rule size: %d\n", d.Size());
+    bool find_match = false;
+    for(rapidjson::SizeType i = 0; i < d.Size(); i++) {
+      int from_index = -1;
+      int to_index = -1;
+      const rapidjson::Value& r = d[i]["rule"];
+
+      if(r.IsArray()) {
+        printf("rule size: %d\n", r.Size());
+        for(rapidjson::SizeType j = 0; j < r.Size(); j++) {
+          std::string id = r[j].GetString();
+          if(id == from) {
+            from_index = j;
+          }
+          if(id == to) {
+            to_index = j;
+          }
+        }
+
+        if(from_index == -1 || to_index == -1) {
+          printf("[%d] not match, from:%d, to:%d\n", i, from_index, to_index);
+          continue;
+        }
+        find_match = true;
+        printf("match, from:%d, to:%d\n", from_index, to_index);
+
+        if(from_index < to_index) {
+          for(rapidjson::SizeType k = from_index; k < to_index; k++) {
+            auto p = load_point(r[k].GetString(), r[k+1].GetString());
+            if(p.first == false)
+              return false;
+            result.push_back(p.second);
+          }
+        } else {
+          for(rapidjson::SizeType k = from_index; k > to_index; k--) {
+            auto p = load_point(r[k].GetString(), r[k-1].GetString());
+            if(p.first == false)
+              return false;
+            result.push_back(p.second);
+          }
+        }
+        
+        break;
+      }
+    }
+    if(!find_match) {
+      printf("not match, from:%s, to:%s\n", from.c_str(), to.c_str());
+      return false;
+    }
+  }
+  printf("res size: %d\n", result.size());
+  for(auto& itr:result) {
+    printf("res: %s\n", itr.c_str());
+  }
+
+  return true;
 }

@@ -1,0 +1,10 @@
+[
+    {
+        "neighbor" : "1",
+        "point" : {"info":"in map 2, neighbor to 1"}
+    },
+    {
+        "neighbor" : "3",
+        "point" : {"info":"in map 2, neighbor to 3"}
+    }
+]

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+namespace UTILS {
+
 #define LINE_SIZE 128
 
 int _hexdump(void *addr, size_t len, char **buffer)
@@ -61,4 +63,6 @@ void hexdump(void *addr, size_t len) {
   printf("buffer len:%d\n", len);
   printf("%s\n",dump);
   free(dump);
+}
+
 }

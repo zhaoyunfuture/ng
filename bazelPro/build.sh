@@ -26,5 +26,9 @@ function jw_srv() {
     rm -rf jw_srv
     cp bazel-bin/jw_srv .
 }
-
+function hk_srv() {
+    bazel build //:hk_srv
+    rm -rf hk_srv
+    cp bazel-bin/hk_srv .
+}
 $@
