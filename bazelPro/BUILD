@@ -76,6 +76,13 @@ cc_library(
     deps = [
         "@com_github_tencent_rapidjson//:rapidjson",
         ":zlib",
+        "@boost//:xpressive",
+        "@boost//:filesystem",
+        "@boost//:uuid",
+        "@boost//:asio",
+        "@boost//:format",
+        "@boost//:dynamic_bitset",
+        "@boost//:iostreams",
     ],
     visibility = ["//visibility:public"],
 )
