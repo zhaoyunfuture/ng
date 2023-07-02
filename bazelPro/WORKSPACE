@@ -8,6 +8,14 @@ http_archive(
   strip_prefix = "googletest-609281088cfefc76f9d0ce82e1ff6c30cc3591e5",
 )
 
+#opmock seems not work
+http_archive(
+    name = "opmock",
+    url = "https://github.com/opmock/opmock/archive/v2.6.2.tar.gz",
+    sha256 = "5dca05aafbdf1dcc4e333fa8e2224b7f283b6207c901a05cc84428a9e9d959c2",
+    strip_prefix = "opmock-2.6.2",
+)
+
 #proto
 http_archive(
     name = "rules_proto",

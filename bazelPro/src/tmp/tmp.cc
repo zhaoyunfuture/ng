@@ -5,6 +5,8 @@
 #include <utility> //pair
 #include <vector>
 
+#include "src/tmp/tmp.h"
+
 //for test_cross_map
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -13,12 +15,46 @@
 #include "rapidjson/error/en.h"
 #include "rapidjson/filereadstream.h"
 
+//for test zlib
+#include "src/lib/uthread.h"
+#include "src/lib/loopthread.h"
+#include "src/lib/loop.h"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/queue.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
 static bool active_saving_ = false;
 static bool has_obstacle_ = true;
 static bool not_auto_mode = false;
 static bool emergency_stop = false;
 static uint64_t last_active_save_falling_time_ = 0;
 
+void test_rapidjson() {
+  rapidjson::Document d;
+
+  char text[128] = "{\"a\":\"b\",\"c\":{\"d\":\"e\"}}";
+  if(!d.Parse(text).HasParseError() && d.IsObject()) {
+    if(d.HasMember("a")) {
+      printf("text, has member a, content: %s\n", d["a"].GetString());
+    }
+    if(d.HasMember("c")) {
+      printf("text, has member c\n");
+      if(d["c"].HasMember("d")) {
+        printf("text, has member d, content: %s\n", d["c"]["d"].GetString());
+      }
+    }
+
+  }
+}
 int test_edge(bool active){
 /* *****************
   catch falling edge
@@ -191,4 +227,114 @@ bool test_cross_map(const std::string& from, const std::string& to) {
   }
 
   return true;
+}
+
+#include <boost/optional.hpp>
+void test_boost_optinal() {
+  boost::optional<int> test;
+  if(test) {
+    printf("test non-null, %d\n", test.get());
+  } else {
+    printf("test non-null\n");
+  }
+  
+  test.reset();
+
+  if(test) {
+    printf("test non-null, %d\n", test.get());
+  } else {
+    printf("test non-null\n");
+  }
+
+  test = 32;
+  if(test) {
+    printf("test non-null, %d\n", test.get());
+  }
+
+}
+
+uint32_t Hk_Shm::crc32(uint8_t *data, uint16_t length) {
+    uint8_t i;
+    uint32_t crc = 0xffffffff;        // Initial value
+    while(length--)
+    {
+        crc ^= *data++;                // crc ^= *data; data++;
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xEDB88320;// 0xEDB88320= reverse 0x04C11DB7
+            else
+                crc = (crc >> 1);
+        }
+    }
+    return ~crc;
+}
+
+int Hk_Shm::Get(agv_info_s& payload, uint32_t time_range/*sec*/) {
+    auto& context = GetContext();
+    //index check
+    int index = context.helper.index;
+    if(index >= cache_buf_max) {
+        printf("index error: %d\n", index);
+        return -1;
+    }
+    printf("index reader: %d\n", index);
+    //timeline check
+    uint32_t read_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    printf("diff time: %ld, range accept(sec): %d\n", read_time - context.agvs.wrapper[index].timestamp, time_range);
+    if(read_time - context.agvs.wrapper[index].timestamp > time_range) {
+        printf("time out of data: %d(sec)\n", read_time - context.agvs.wrapper[index].timestamp);
+        return -1;
+    }
+
+    //copy payload
+    memcpy(&payload, (char*)&context.agvs.wrapper[index].agv_info, sizeof(agv_info_s));
+
+    //crc check
+    uint32_t crc = crc32((uint8_t*)&payload, sizeof(agv_info_s));
+    printf("read crc: %d\n", crc);
+    if(crc != context.agvs.wrapper[index].crc32) {
+        int retry_index;
+        if(index == 0){
+            retry_index = cache_buf_max-1;
+        } else {
+            retry_index = index - 1;
+        }
+        printf("crc error, will try former one with retry_index: %d\n", retry_index);
+        if(read_time - context.agvs.wrapper[retry_index].timestamp > time_range) {
+            printf("time out of data: %d(mm)\n", read_time - context.agvs.wrapper[retry_index].timestamp);
+            return -1;
+        }
+        memcpy(&payload, (char*)&context.agvs.wrapper[retry_index].agv_info, sizeof(agv_info_s));
+        uint32_t crc_again = crc32((uint8_t*)&payload, sizeof(agv_info_s));
+        if(crc_again != context.agvs.wrapper[retry_index].crc32) {
+            printf("crc still error with index: %d\n", retry_index);
+            return -1;
+        }
+    }
+    
+    return 0;
+}
+
+int Hk_Shm::Put(agv_info_s* agv_msg) {
+    auto& context = GetContext();
+
+    // crc32 calc with payload
+    uint32_t crc = crc32((uint8_t*)agv_msg, sizeof(agv_info_s));
+    printf("crc: %d\n", crc);
+    // time now
+    uint32_t time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    printf("time: %ld\n", time);
+
+    int index = context.helper.index + 1;
+    index %= cache_buf_max;
+    printf("index: %d\n", index);
+
+    context.agvs.wrapper[index].timestamp = time;
+    context.agvs.wrapper[index].crc32 = crc;
+
+    memcpy((char*)&context.agvs.wrapper[index].agv_info, agv_msg, sizeof(agv_info_s));
+    context.helper.index = index;
+    
+    return 0;
 }

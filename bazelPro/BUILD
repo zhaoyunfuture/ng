@@ -75,6 +75,7 @@ cc_library(
     ]),
     deps = [
         "@com_github_tencent_rapidjson//:rapidjson",
+        ":zlib",
     ],
     visibility = ["//visibility:public"],
 )
@@ -87,7 +88,6 @@ cc_test(
   deps = [
     ":tmp",
     "@com_google_googletest//:gtest_main",
-    
     ],
 )
 
@@ -98,7 +98,7 @@ cc_binary(
   deps = [
     #":cc_proto_lib",
     #":libName",
-    #"@com_github_libevent_libevent//:event",
+    "@com_github_libevent_libevent//:event",
     
     ":utils",
     ":tmp",
@@ -154,3 +154,47 @@ cc_binary(
     ":utils",
     ],
 )
+
+#api part begin
+cc_library(
+    name = "zlib",
+    srcs = glob([
+            "src/lib/*.cc"
+    ]),
+    hdrs = glob([
+            "src/lib/*.h",
+    ]),
+    deps = [
+        "@com_github_libevent_libevent//:event",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# cc_library(
+#     name = "libtest",
+#     srcs = glob([
+#             "src/libtest/*.cc"
+#     ]),
+#     hdrs = glob([
+#             "src/libtest/*.h",
+#     ]),
+#     deps = [
+#         ":zlib",
+#     ],
+#     visibility = ["//visibility:public"],
+# )
+
+cc_binary(
+  name = "librun",
+  srcs = glob([
+            "src/libmain/main.cc",
+            "src/libtest/*.cc",
+        ]),
+  linkopts = [ "-lpthread", 
+               "-lrt"
+             ] ,
+  deps = [
+    "zlib",
+    ],
+)
+#end

@@ -6,6 +6,12 @@ function exe() {
     cp bazel-bin/exe .
 }
 
+function librun() {
+    bazel build //:librun -c dbg
+    rm -rf librun
+    cp bazel-bin/librun .
+}
+
 function test() {
     bazel test --test_output=all //:test
 }

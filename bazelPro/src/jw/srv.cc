@@ -56,9 +56,11 @@ void handle_msg(char* buf, int len) {
 		jsonDoc.AddMember("id", d["id"].GetInt(), jsonDoc.GetAllocator());
 
 		if(block_tick%4 == 0) {
-			jsonDoc.AddMember("result", true, jsonDoc.GetAllocator());
-		} else {
-			jsonDoc.AddMember("result", false, jsonDoc.GetAllocator());
+			jsonDoc.AddMember("result", 0, jsonDoc.GetAllocator());
+		} else if(block_tick%4 == 1){
+			jsonDoc.AddMember("result", 1, jsonDoc.GetAllocator());
+		} else if(block_tick%4 == 2){
+			jsonDoc.AddMember("result", 2, jsonDoc.GetAllocator());
 		}
 
 		block_tick++;
@@ -191,7 +193,7 @@ int main(int argc, char** argv)
 	bind(server_sockfd, (struct sockaddr*)&server_addr, server_len);
 	signal(SIGCHLD, SIG_IGN);
 
-	printf("begin receive package with port:%d\n",PORT);
+	printf("## begin receive package with port:%d\n",PORT);
 	while(1)
 	{	
 		recv_len = recvfrom(server_sockfd, buffer, sizeof(buffer), 0, 
